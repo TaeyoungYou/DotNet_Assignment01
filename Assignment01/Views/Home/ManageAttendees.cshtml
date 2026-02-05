@@ -1,0 +1,43 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Manage Attendees";
+}
+@model Assignment01.Models.Event;
+
+
+<h1>Manage Attendees - @Model.Title</h1>
+<hr />
+<h2>Sign Up for @Model.Title</h2>
+<div>
+    <form asp-action="Signup" method="post" asp-route-id="@Model.Id">
+        <div>
+            <label for="Name">Name</label>
+            <input type="text" name="Name" id="Name" required />
+        </div>
+        <div>
+            <label for="Email">Email</label>
+            <input type="email" name="Email" id="Email" required />
+        </div>
+        <div>
+            <button type="submit">Sign Up</button>
+            <button asp-controller="Home" asp-action="EventManager">Back to Events</button>
+        </div>
+    </form>
+</div>
+<hr />
+<h2>Current Attendees</h2>
+<hr />
+@if(Model.Attendees.Count == 0)
+{
+    <p>No attendees yet</p>
+} else
+{
+    @foreach (var at in Model.Attendees)
+    {
+        <div>
+            <b>@at.Name</b><span>@at.Email</span>
+        </div>
+    }
+}
