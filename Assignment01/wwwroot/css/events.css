@@ -2,10 +2,25 @@
     color: gray;
 }
 
-table {
+#event-table {
     width: 100%;
-    border: 1px solid black;
+    background-color: ghostwhite;
+    border-radius: 10px;
+    box-shadow: 0 0 3px #808080;
+
+    overflow: hidden;
 }
-thead {
-    border-bottom: 1px solid black;
+#event-table thead th {
+    padding: 10px;
+    color: #1e1e1e;
+}
+
+#event-table tbody tr td {
+    padding: 10px;
+    color: #1e1e1e;
+    border-top: 1px solid #c2c2c2;
+}
+#event-table tbody tr:hover {
+    background-color: #cfcfcf;
+    transition: all 0.3s ease;
 }
