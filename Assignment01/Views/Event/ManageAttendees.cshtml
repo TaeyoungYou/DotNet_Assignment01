@@ -1,0 +1,55 @@
+﻿@model Assignment01.Models.Event
+
+<div class="container mt-4">
+    <h3>Manage Attendees: <b>@Model.Title</b></h3>
+    <hr />
+
+    <div class="card p-3 mb-4 bg-light shadow-sm">
+        <form asp-action="AddAttendee" method="post" class="row g-2">
+            <input type="hidden" name="eventId" value="@Model.Id" />
+            <div class="col-md-5">
+                <input type="text" name="name" class="form-control" placeholder="Attendee Name" required />
+            </div>
+            <div class="col-md-5">
+                <input type="email" name="email" class="form-control" placeholder="Email Address" required />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-dark w-100">Add</button>
+            </div>
+        </form>
+    </div>
+
+    <table class="table table-hover border">
+        <thead class="table-dark">
+            <tr><th>Name</th><th>Email</th><th class="text-center">Action</th></tr>
+        </thead>
+        <tbody>
+            @if (Model.Attendees != null && Model.Attendees.Any())
+            {
+                foreach (var at in Model.Attendees)
+                {
+                    <tr>
+                        <td class="align-middle">@at.Name</td>
+                        <td class="align-middle">@at.Email</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-2">
+                                <a asp-action="EditAttendee" asp-route-id="@at.Id" class="btn btn-warning btn-sm">Edit</a>
+
+                                <form asp-action="RemoveAttendee" method="post" style="display:inline;">
+                                    <input type="hidden" name="id" value="@at.Id" />
+                                    <input type="hidden" name="eventId" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="3" class="text-center text-muted">No attendees yet.</td></tr>
+            }
+        </tbody>
+    </table>
+    <a asp-action="Index" class="btn btn-link text-secondary">Back to List</a>
+</div>

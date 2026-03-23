@@ -1,0 +1,70 @@
+﻿@model Assignment01.Models.Event
+
+@{
+    ViewData["Title"]="Event Details";
+}
+
+<div class="container mt-4">
+    <div class="mb-4 text-center">
+        @if (!string.IsNullOrEmpty(Model.BannerUrl))
+        {
+            <img src="@Model.BannerUrl" class="img-fluid rounded shadow-sm banner-style" alt="banner" />
+        }
+        else
+        {
+            <div class="bg-light py-5 border rounded text-muted">No Event Banner</div>
+        }
+    </div>
+
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+            <h1 class="display-5 font-weight-bold mb-0">@Model.Title</h1>
+            <p class="text-muted mb-0">@Model.Location | @Model.Date.ToShortTimeString(), @Model.Date.ToLongDateString()</p>
+        </div>
+        
+        <div class="d-flex gap-2" style="margin-top: 10px;">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit Event</a>
+            <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+        </div>
+    </div>
+
+    <hr class="mt-2 mb-4" />
+
+    <div class="mb-5">
+        <p class="desc-style">@Model.Description</p>
+    </div>
+
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Attendees (@(Model.Attendees?.Count ?? 0))</h3>
+            <a asp-action="ManageAttendees" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">Manage Attendee</a>
+        </div>
+
+        <table class="table table-hover border">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if(Model.Attendees != null && Model.Attendees.Any())
+                {
+                    foreach(var attendee in Model.Attendees)
+                    {
+                        <tr>
+                            <td>@attendee.Name</td>
+                            <td>@attendee.Email</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">No attendee registered yet.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

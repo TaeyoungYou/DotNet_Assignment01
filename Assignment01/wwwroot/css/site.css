@@ -30,3 +30,18 @@ body {
   text-align: start;
 }
 
+.btn-fixed-width {
+    min-width: 100px;
+    text-align: center;
+}
+
+.banner-style {
+    max-height: 400px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.desc-style {
+    white-space: pre-line;
+    font-size: 1.1rem;
+}
