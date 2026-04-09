@@ -1,0 +1,22 @@
+﻿@model Assignment01.Models.Attendee
+
+<div class="container mt-4">
+    <h2>Edit Attendee</h2>
+    <hr />
+    <form asp-action="EditAttendee" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="EventId" />
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" type="email" class="form-control" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a asp-action="ManageAttendees" asp-route-id="@Model.EventId" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

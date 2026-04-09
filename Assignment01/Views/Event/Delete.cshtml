@@ -1,0 +1,14 @@
+﻿@model Assignment01.Models.Event
+
+<div class="container mt-5">
+    <div class="alert alert-danger text-center">
+        <h3>Are you sure to delete?</h3>
+        <p><strong>@Model.Title</strong> event is deleted perminently</p>
+        
+        <form asp-action="Delete" method="post" class="mt-4">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger px-4">Yes</button>
+            <a asp-action="Index" class="btn btn-secondary px-4">No</a>
+        </form>
+    </div>
+</div>

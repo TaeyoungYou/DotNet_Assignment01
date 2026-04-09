@@ -1,0 +1,59 @@
+﻿@model Assignment01.Models.Event
+
+@{
+    ViewData["Title"] = "Edit Event";
+}
+
+<div class="container mt-4">
+    <h2>Edit Event</h2>
+    <hr />
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="BannerUrl" />
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Title</label>
+                    <input asp-for="Title" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Date" class="form-label">Date</label>
+                        <input asp-for="Date" class="form-control" type="datetime-local" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Location" class="form-label">Location</label>
+                        <input asp-for="Location" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card bg-light p-3 shadow-sm">
+                    <label class="form-label font-weight-bold">Current Banner</label>
+                    @if (!string.IsNullOrEmpty(Model.BannerUrl))
+                    {
+                        <img src="@Model.BannerUrl" class="img-fluid rounded mb-2" />
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Change Image (Optional)</label>
+                        <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning">Save Change</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

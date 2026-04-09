@@ -1,0 +1,60 @@
+﻿@* readonly list model *@
+@model IEnumerable<Assignment01.Models.Event>
+@{
+    ViewData["Title"] = "Event Manager - All Events";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Event Manager</h2>
+        @if (User.IsInRole("Organizer"))
+        {
+            <a asp-controller="Event" asp-action="Create" class="btn btn-dark">Create New Event</a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            There are no events! Make a new event!
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>@Html.DisplayNameFor(Model => Model.Title)</th>
+                            <th>@Html.DisplayNameFor(Model => Model.Date)</th>
+                            <th>@Html.DisplayNameFor(Model => Model.Location)</th>
+                            <td class="text-center">Actions</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var item in Model) {
+                            <tr>
+                                <td class="align-middle">@item.Title</td>
+                                <td class="align-middle">@item.Date.ToShortDateString()</td>
+                                <td class="align-middle">@item.Location</td>
+                                <td class="text-center">
+                                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-success btn-fixed-width">Details</a>
+
+                                        @if (User.IsInRole("Organizer"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-warning btn-fixed-width">Edit</a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-fixed-width">Delete</a>
+                                            <a asp-action="ManageAttendees" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-fixed-width">Attendees</a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
