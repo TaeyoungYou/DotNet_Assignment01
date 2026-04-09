@@ -8,3 +8,5 @@
 ### attendee page -- test account(attendee@test.com / Password123!)
 <img width="940" height="587" alt="image" src="https://github.com/user-attachments/assets/db2b0a8a-e081-42d9-a162-93b940db9c38" />
 <img width="940" height="587" alt="image" src="https://github.com/user-attachments/assets/690d3163-43d1-406b-b690-31a3868ab909" />
+
+Website: https://assignmentapp4778-f3f9ekefd5cygdcw.canadacentral-01.azurewebsites.net
