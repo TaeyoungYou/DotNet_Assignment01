@@ -23,7 +23,12 @@
         </div>
         
         <div class="d-flex gap-2" style="margin-top: 10px;">
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit Event</a>
+            @if (User.IsInRole("Organizer"))
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit Event</a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+            }
+
             <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
         </div>
     </div>
@@ -36,35 +41,48 @@
 
     <div class="mt-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3>Attendees (@(Model.Attendees?.Count ?? 0))</h3>
-            <a asp-action="ManageAttendees" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">Manage Attendee</a>
+            <h3>Attendees</h3>
+
+            @if (User.IsInRole("Organizer"))
+            {
+                <a asp-action="ManageAttendees" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">Manage Attendee</a>
+            }
         </div>
 
-        <table class="table table-hover border">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if(Model.Attendees != null && Model.Attendees.Any())
-                {
-                    foreach(var attendee in Model.Attendees)
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <table class="table table-hover border">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Attendees != null && Model.Attendees.Any())
+                    {
+                        foreach (var attendee in Model.Attendees)
+                        {
+                            <tr>
+                                <td>@attendee.Name</td>
+                                <td>@attendee.Email</td>
+                            </tr>
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td>@attendee.Name</td>
-                            <td>@attendee.Email</td>
+                            <td colspan="2" class="text-center text-muted">No attendee registered yet.</td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">No attendee registered yet.</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Please log in to view the attendee list.
+            </div>
+        }
     </div>
 </div>

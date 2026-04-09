@@ -1,12 +1,14 @@
 ﻿using Assignment01.Data;
 using Assignment01.Models;
 using Assignment01.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Assignment01.Controllers
 {
     [Route("events")]
+    [Authorize(Roles = "Organizer")]
     public class EventController : Controller
     {
         private readonly EventDbContext _context;
@@ -17,6 +19,8 @@ namespace Assignment01.Controllers
             _context = context;
             _blobService = blobService;
         }
+
+        [AllowAnonymous]
         [Route("")]
         [Route("index")]
         public async Task<IActionResult> Index()
@@ -63,6 +67,7 @@ namespace Assignment01.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [AllowAnonymous]
         [HttpGet]
         [Route("details/{id}")]
         public async Task<IActionResult> Details(int? id)
