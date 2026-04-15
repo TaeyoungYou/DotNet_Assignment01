@@ -5,6 +5,7 @@
         public int Id { get; set; }
         public string Name { get; set; }
         public string Email { get; set; }
+        public string? UserId { get; set; }
         public int EventId { get; set; }
     }
     public class Event
@@ -15,6 +16,7 @@
         public DateTime Date { get; set; }
         public string Location { get; set; }
         public string? BannerUrl { get; set; }
+        public string? OrganizerUserId { get; set; }
         public List<Attendee> Attendees { get; set; } = new List<Attendee>();
     }
 }

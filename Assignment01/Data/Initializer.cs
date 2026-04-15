@@ -74,6 +74,7 @@ namespace Assignment01.Data
                         Date = DateTime.Parse("2026-05-15 09:00"),
                         Location = "Ottawa Convention Centre",
                         BannerUrl = "https://via.placeholder.com/800x400.png?text=AI+Summit",
+                        OrganizerUserId = organizer.Id,
                         Attendees = new List<Attendee>
                         {
                             new Attendee { Name = "Alice Johnson", Email = "alice.j@example.com" },
@@ -87,6 +88,7 @@ namespace Assignment01.Data
                         Date = DateTime.Parse("2026-06-10 13:00"),
                         Location = "Algonquin College T-Building",
                         BannerUrl = "https://via.placeholder.com/800x400.png?text=Web+Workshop",
+                        OrganizerUserId = organizer.Id,
                         Attendees = new List<Attendee>
                         {
                             new Attendee { Name = "Charlie Brown", Email = "charlie@webdev.org" },
@@ -100,6 +102,7 @@ namespace Assignment01.Data
                         Date = DateTime.Parse("2026-07-22 18:30"),
                         Location = "Kanata North Tech Hub",
                         BannerUrl = "https://via.placeholder.com/800x400.png?text=Cyber+Night",
+                        OrganizerUserId = organizer.Id,
                         Attendees = new List<Attendee>
                         {
                             new Attendee { Name = "Edward Norton", Email = "edward@secure.net" },
@@ -110,6 +113,17 @@ namespace Assignment01.Data
 
 
                 context.Events.AddRange(events);
+                context.SaveChanges();
+            }
+
+            var eventsWithoutOrganizer = context.Events.Where(e => string.IsNullOrEmpty(e.OrganizerUserId)).ToList();
+
+            if(eventsWithoutOrganizer.Any())
+            {
+                foreach(var ev in eventsWithoutOrganizer)
+                {
+                    ev.OrganizerUserId = organizer.Id;
+                }
                 context.SaveChanges();
             }
         }

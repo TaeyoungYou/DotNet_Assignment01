@@ -1,23 +1,27 @@
 ﻿using Assignment01.Data;
+using Assignment01.Hubs;
 using Assignment01.Models;
 using Assignment01.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Assignment01.Controllers
 {
     [Route("events")]
-    [Authorize(Roles = "Organizer")]
     public class EventController : Controller
     {
         private readonly EventDbContext _context;
         private readonly BlobService _blobService;
+        private readonly IHubContext<EventHub> _hubContext;
 
-        public EventController(EventDbContext context, BlobService blobService)
+        public EventController(EventDbContext context, BlobService blobService, IHubContext<EventHub> hubContext)
         {
             _context = context;
             _blobService = blobService;
+            _hubContext = hubContext;
         }
 
         [AllowAnonymous]
@@ -30,10 +34,12 @@ namespace Assignment01.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Organizer")]
         [Route("create")]
         public IActionResult Create() => View();
 
         [HttpPost]
+        [Authorize(Roles = "Organizer")]
         [Route("create")]
         public async Task<IActionResult> Create(Event @event, IFormFile imageFile)
         {
@@ -44,21 +50,12 @@ namespace Assignment01.Controllers
 
                 return View(@event);
             }
+
+            // Save the identifier name to organizer_user_id
+            @event.OrganizerUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             if (imageFile != null && imageFile.Length > 0) 
             {
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-
-                string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
-
-                string filePath = Path.Combine(uploadPath, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await imageFile.CopyToAsync(stream);
-                }
-
-                //@event.BannerUrl = "/images/" + fileName;
                 @event.BannerUrl = await _blobService.UploadFileAsync(imageFile);
             }
 
@@ -84,6 +81,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Organizer")]
         [Route("edit/{id}")]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -96,6 +94,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Organizer")]
         [Route("edit/{id}")]
         public async Task<IActionResult> Edit(int id, Event @event, IFormFile? imageFile)
         {
@@ -127,6 +126,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Organizer")]
         [Route("Delete/{id}")]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -137,6 +137,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Organizer")]
         [Route("Delete/{id}")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -160,6 +161,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Organizer")]
         [Route("manage-attendees/{id}")]
         public async Task<IActionResult> ManageAttendees(int id)
         {
@@ -172,6 +174,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Organizer")]
         [Route("edit-attendees/{id}")]
         public async Task<IActionResult> EditAttendee(int id)
         {
@@ -181,6 +184,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Organizer")]
         [Route("edit-attendees/{id}")]
         public async Task<IActionResult> EditAttendee(int id, Attendee attendee)
         {
@@ -192,6 +196,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Organizer")]
         [Route("add-attendee")]
         public async Task<IActionResult> AddAttendee(int eventId, string name, string email)
         {
@@ -205,6 +210,7 @@ namespace Assignment01.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Organizer")]
         [Route("remove-attendee")]
         public async Task<IActionResult> RemoveAttendee(int id, int eventId)
         {
@@ -215,6 +221,97 @@ namespace Assignment01.Controllers
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(ManageAttendees), new { id = eventId });
+        }
+
+        [HttpPost]
+        [Authorize] // Any authenticated user can self-register
+        [Route("register/{eventId}")]
+        public async Task<IActionResult> Register(int eventId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            var userName = User.Identity?.Name;
+
+            var ev = await _context.Events
+                .Include(e => e.Attendees)
+                .FirstOrDefaultAsync(e => e.Id == eventId);
+
+            if(ev == null)
+            {
+                return NotFound();
+            }
+
+            var alreadyRegistered = ev.Attendees.Any(a => a.UserId == userId);
+
+            if (alreadyRegistered)
+            {
+                return RedirectToAction("Details", new { id = eventId });
+            }
+
+            var attendee = new Attendee
+            {
+                Name = userName,
+                Email = userEmail,
+                UserId = userId,
+                EventId = eventId,
+            };
+
+            _context.Attendees.Add(attendee);
+            await _context.SaveChangesAsync();
+
+            var attendeeCount = await _context.Attendees.CountAsync(a=>a.EventId == eventId);
+            var groupName = $"event-{eventId}";
+
+            await _hubContext.Clients.Group(groupName).SendAsync(
+                "AttendeeRegistered",
+                attendeeCount,
+                attendee.Name,
+                attendee.Email
+            );
+
+            if (!string.IsNullOrEmpty(ev.OrganizerUserId))
+            {
+                await _hubContext.Clients.User(ev.OrganizerUserId).SendAsync(
+                    "OrganizerNotification",
+                    $"{attendee.Email} just registered for your {ev.Title}."
+                );
+            }
+
+            return RedirectToAction("Details", new { id = eventId });
+        }
+
+        [HttpPost]
+        [Authorize]
+        [Route("unregister/{eventId}")]
+        public async Task<IActionResult> Unregister(int eventId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var attendee = await _context.Attendees
+                .FirstOrDefaultAsync(a => a.EventId == eventId && a.UserId == userId);
+
+            if(attendee == null)
+            {
+                return RedirectToAction("Details", new { id = eventId });
+            }
+
+            var removedAttendeeName = attendee.Name;
+            var removedAttendeeEmail = attendee.Email;
+
+            _context.Attendees.Remove(attendee);
+            await _context.SaveChangesAsync();
+
+            var attendeeCount = await _context.Attendees.CountAsync(a => a.EventId == eventId);
+            var groupName = $"event-{eventId}";
+
+            await _hubContext.Clients.Group(groupName).SendAsync(
+                "AttendeeUnregistered",
+                attendeeCount,
+                removedAttendeeName,
+                removedAttendeeEmail
+            );
+
+            return RedirectToAction("Details", new { id = eventId });
         }
     }
 }

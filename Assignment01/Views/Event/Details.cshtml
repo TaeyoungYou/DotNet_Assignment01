@@ -1,7 +1,11 @@
 ﻿@model Assignment01.Models.Event
+@using System.Security.Claims
 
 @{
     ViewData["Title"]="Event Details";
+
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var isRegistered = Model.Attendees.Any(a => a.UserId == currentUserId);
 }
 
 <div class="container mt-4">
@@ -41,12 +45,30 @@
 
     <div class="mt-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3>Attendees</h3>
+            <h3>Attendees <span id="attendee-count" class="badge bg-black">@Model.Attendees.Count</span></h3>
 
-            @if (User.IsInRole("Organizer"))
-            {
-                <a asp-action="ManageAttendees" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">Manage Attendee</a>
-            }
+            <div class="d-flex align-items-center gap-2">
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    if (!isRegistered)
+                    {
+                        <form asp-action="Register" asp-route-eventId="@Model.Id" method="post">
+                            <button type="submit" class="btn btn-success btn-sm">Register</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Unregister" asp-route-eventId="@Model.Id" method="post">
+                            <button type="submit" class="btn btn-danger btn-sm">Unregister</button>
+                        </form>
+                    }
+                }
+
+                @if (User.IsInRole("Organizer"))
+                {
+                    <a asp-action="ManageAttendees" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">Manage Attendee</a>
+                }
+            </div>
         </div>
 
         @if (User.Identity != null && User.Identity.IsAuthenticated)
@@ -58,7 +80,7 @@
                         <th>Email</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="attendee-list">
                     @if (Model.Attendees != null && Model.Attendees.Any())
                     {
                         foreach (var attendee in Model.Attendees)
@@ -71,7 +93,7 @@
                     }
                     else
                     {
-                        <tr>
+                        <tr class="empty-attendee-row">
                             <td colspan="2" class="text-center text-muted">No attendee registered yet.</td>
                         </tr>
                     }
@@ -86,3 +108,97 @@
         }
     </div>
 </div>
+
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3">
+    <div id="organizerNotificationToast" class="toast text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header text-bg-dark border-0">
+            <strong class="me-auto">Organizer Notification</strong>
+            <small>Now</small>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="organizer-notification-message"></div>
+    </div>
+</div>
+
+
+<input type="hidden" id="event-id" value="@Model.Id" />
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        const eventId = document.querySelector("#event-id").value;
+        const attendeeCount = document.querySelector("#attendee-count");
+        const attendeeList = document.querySelector("#attendee-list");
+
+        if(eventId) {
+            const eventGroupName = `event-${eventId}`;
+
+            const connection = new signalR.HubConnectionBuilder()
+                                .withUrl("/eventHub")
+                                .build();
+
+            connection.on("AttendeeRegistered", (count, attendeeName, attendeeEmail) => {
+                if(attendeeCount) {
+                    attendeeCount.textContent = count;
+                }
+
+                if(attendeeList) {
+                    const emptyRow = attendeeList.querySelector(".empty-attendee-row");
+                    if(emptyRow){
+                        emptyRow.remove();
+                    }
+
+                    const row = document.createElement("tr");
+                    row.innerHTML = `<td>${attendeeName}</td><td>${attendeeEmail}</td>`;
+                    attendeeList.appendChild(row);
+                }
+            });
+
+            connection.on("AttendeeUnregistered", (count, attendeeName, attendeeEmail) => {
+                if (attendeeCount) {
+                    attendeeCount.textContent = count;
+                }
+
+                if (attendeeList) {
+                    const rows = attendeeList.querySelectorAll("tr");
+
+                    rows.forEach(row => {
+                        const nameCell = row.children[0];
+                        const emailCell = row.children[1];
+
+                        if (nameCell && emailCell &&
+                            nameCell.textContent === attendeeName &&
+                            emailCell.textContent === attendeeEmail) {
+                            row.remove();
+                        }
+                    });
+
+                    if (!attendeeList.querySelector("tr")) {
+                        const emptyRow = document.createElement("tr");
+                        emptyRow.className = "empty-attendee-row";
+                        emptyRow.innerHTML = `<td colspan="2" class="text-center text-muted">No attendee registered yet.</td>`;
+                        attendeeList.appendChild(emptyRow);
+                    }
+                }
+            });
+
+            connection.on("OrganizerNotification", (message) => {
+                const toastElement = document.querySelector("#organizerNotificationToast");
+                const toastMessage = document.querySelector("#organizer-notification-message");
+
+                if(toastElement && toastMessage) {
+                    toastMessage.textContent = message;
+
+                    const toast = new bootstrap.Toast(toastElement, {delay: 4000});
+                    toast.show();
+                }
+            });
+
+            connection.start()
+                .then(() => connection.invoke("JoinEventGroup", eventGroupName))
+                .catch(err => console.log(err.toString()));
+        }
+
+
+    </script>
+}
